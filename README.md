@@ -1,72 +1,63 @@
-## demo app - developing with Docker
+## Create Docker repository on Nexus and push to it
 
-This demo app shows a simple user profile app set up using 
-- index.html with pure js and css styles
-- nodejs backend with express module
-- mongodb for data storage
+### Technologies used:
+Docker, Nexus, DigitalOcean, Linux
+### Project Description:
+Create Docker hosted repository on Nexus
+Create Docker repository role on Nexus
+Configure Nexus, DigitalOcean Droplet and Docker to be able to push to Docker repository
+Build and Push Docker image to Docker repository on Nexus
 
-All components are docker-based
+Below are step-by-step guide to creating a Docker repository on Nexus and pushing a Docker image to it:
 
-### With Docker
+Step 1: Create Docker hosted repository on Nexus
 
-#### To start the application
+Log in to your Nexus instance and go to the Administration section
+Click on Repositories and then click on the Create Repository button
+Select the Docker (hosted) recipe and click Next
+Enter a name for example:- docker-hosted for your repository and click Create Repository
+Your Docker repository is now created on Nexus
 
-Step 1: Create docker network
+Step 2: Create Docker repository role on Nexus
 
-    docker network create mongo-network 
+Go to the Security section in Nexus and click on Roles
+Click on the Create Role button
+Enter a name for your role and click Create Role
+Click on the newly created role and then click on the Privileges tab
+Click on Add Privilege and select Repository View from the dropdown
+Select your Docker repository from the list of repositories and click Add Selected
+Click on Add Privilege again and select Repository Admin from the dropdown
+Select your Docker repository from the list of repositories and click Add Selected
+Your Docker repository role is now created on Nexus
 
-Step 2: start mongodb 
+Step 3: Configure Nexus, DigitalOcean Droplet and Docker to be able to push to Docker repository
 
-    docker run -d -p 27017:27017 -e MONGO_INITDB_ROOT_USERNAME=admin -e MONGO_INITDB_ROOT_PASSWORD=password --name mongodb --net mongo-network mongo    
+Log in to your DigitalOcean Droplet via SSH
+Create a Docker login file by running the command: touch ~/.docker/config.json
+Open the Docker login file by running the command: nano ~/.docker/config.json
+Add the following code to the file and replace the placeholders with your Nexus credentials and Docker repository URL:
 
-Step 3: start mongo-express
-    
-    docker run -d -p 8081:8081 -e ME_CONFIG_MONGODB_ADMINUSERNAME=admin -e ME_CONFIG_MONGODB_ADMINPASSWORD=password --net mongo-network --name mongo-express -e ME_CONFIG_MONGODB_SERVER=mongodb mongo-express   
+        {
+        "auths": {
+            "YOUR-DOCKER-REPO-URL": {
+                "auth": "YOUR-NEXUS-USERNAME:YOUR-NEXUS-PASSWORD"
+            }
+        }
+    }
 
-_NOTE: creating docker-network in optional. You can start both containers in a default network. In this case, just emit `--net` flag in `docker run` command_
+Save and close the file
+Log in to your Nexus instance and go to the Docker repository you created earlier
+Click on the Info button and copy the Repository URL
+Go back to your DigitalOcean Droplet and run the command: docker login YOUR-DOCKER-REPO-URL
+Enter your Nexus username and password when prompted
+Your Docker client is now authenticated to push to your Docker repository on Nexus
 
-Step 4: open mongo-express from browser
+Step 4: Build and Push Docker image to Docker repository on Nexus
 
-    http://localhost:8081
+Create a Dockerfile in your project directory and write the instructions to build your Docker image
+Build your Docker image by running the command: docker build -t YOUR-DOCKER-REPO-URL/YOUR-IMAGE-NAME:TAG .
+Push your Docker image to your Docker repository on Nexus by running the command: docker push YOUR-DOCKER-REPO-URL/YOUR-IMAGE-NAME:TAG
+Your Docker image is now pushed to your Docker repository on Nexus
+That's it! You have successfully created a Docker repository on Nexus and pushed a Docker image to it.
 
-Step 5: create `user-account` _db_ and `users` _collection_ in mongo-express
 
-Step 6: Start your nodejs application locally - go to `app` directory of project 
-
-    cd app
-    npm install 
-    node server.js
-    
-Step 7: Access you nodejs application UI from browser
-
-    http://localhost:3000
-
-### With Docker Compose
-
-#### To start the application
-
-Step 1: start mongodb and mongo-express
-
-    docker-compose -f docker-compose.yaml up
-    
-_You can access the mongo-express under localhost:8080 from your browser_
-    
-Step 2: in mongo-express UI - create a new database "my-db"
-
-Step 3: in mongo-express UI - create a new collection "users" in the database "my-db"       
-    
-Step 4: start node server 
-
-    cd app
-    npm install
-    node server.js
-    
-Step 5: access the nodejs application from browser 
-
-    http://localhost:3000
-
-#### To build a docker image from the application
-
-    docker build -t my-app:1.0 .       
-    
-The dot "." at the end of the command denotes location of the Dockerfile.
